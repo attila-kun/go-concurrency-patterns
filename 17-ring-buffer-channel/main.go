@@ -1,6 +1,9 @@
 package main
 
-import "log"
+import (
+	"log"
+	"time"
+)
 
 // A channel-based ring buffer removes the oldest item when the queue is full
 // Ref:
@@ -24,7 +27,8 @@ func (r *ringBuffer) Run() {
 		select {
 		case r.outCh <- v:
 		default:
-			<-r.outCh // pop one item from outchan
+			time.Sleep(time.Second) // give time for consumer to empty the channel
+			<-r.outCh               // pop one item from outchan
 			r.outCh <- v
 		}
 	}
@@ -36,6 +40,12 @@ func main() {
 	outCh := make(chan int, 4) // try to change outCh buffer to understand the result
 	rb := NewRingBuffer(inCh, outCh)
 	go rb.Run()
+
+	go func() {
+		for range outCh {
+
+		}
+	}()
 
 	for i := 0; i < 10; i++ {
 		inCh <- i
